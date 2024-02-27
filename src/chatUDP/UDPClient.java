@@ -1,32 +1,22 @@
 package chatUDP;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 
-/**
- *
- * @author omar_
- */
 public class UDPClient {
-    private String username;
     private DatagramSocket socket;
     private InetAddress serverAddress;
     private int serverPort;
     private ChatClientUI ui;
 
-    public UDPClient(String username,String serverIP, int serverPort) throws SocketException, UnknownHostException {
+    public UDPClient(String serverIP, int serverPort) throws SocketException, UnknownHostException {
         socket = new DatagramSocket();
-        this.username = username;
         this.serverAddress = InetAddress.getByName(serverIP);
         this.serverPort = serverPort;
         this.ui = new ChatClientUI(this);
 
         // Enviar mensaje de conexión
-        sendMessage("Se conecto " + username);
+        sendMessage("CONNECT");
     }
 
     public void sendMessage(String message) {
@@ -38,10 +28,6 @@ public class UDPClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void sendPrivateMessage(String message, String recipient) {
-        sendMessage("PRIVATE " + recipient + " " + message);
     }
 
     public void receiveMessages() {
@@ -61,15 +47,17 @@ public class UDPClient {
     }
 
     public void disconnect() {
+        // Enviar mensaje de desconexión
         sendMessage("DISCONNECT");
     }
 
     public static void main(String[] args) throws SocketException, UnknownHostException {
-        UDPClient client = new UDPClient("jazael", "20.96.185.240", 12345);
+        UDPClient client = new UDPClient("192.168.137.226", 12345);
         client.receiveMessages();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             client.disconnect();
         }));
     }
+
 }

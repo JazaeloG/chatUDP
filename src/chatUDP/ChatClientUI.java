@@ -49,6 +49,5 @@ public class ChatClientUI {
     }
 
     public static void main(String[] args) {
-        // Puedes agregar tu código de inicialización aquí, si es necesario.
     }
 }
