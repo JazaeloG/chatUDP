@@ -2,13 +2,17 @@ package chatUDP;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class UDPServer {
 
     private DatagramSocket socket;
-    private Map<String, InetAddress> clients = new HashMap<>();
+    private HashMap<String, InetAddress> clients = new HashMap<>();
+    private ArrayList<String> users = new ArrayList<>();
+    private ArrayList<String> ipPort = new ArrayList<>();
+    private ArrayList<InetAddress> ipAddress = new ArrayList<>();
     private static final String _IP = "192.168.137.226"; //Cambie por su IP
 
     public UDPServer(int port) throws SocketException, UnknownHostException {
@@ -16,9 +20,16 @@ public class UDPServer {
         socket = new DatagramSocket(port, ip);
     }
 
-    private void handleConnection(InetAddress clientAddress, int clientPort) throws IOException {
+    private void handleConnection(InetAddress clientAddress, int clientPort, String username) throws IOException {
         String clientKey = clientAddress.getHostAddress() + ":" + clientPort;
         clients.put(clientKey, clientAddress);
+        users.add(username);
+        ipPort.add(clientKey);
+        ipAddress.add(clientAddress);
+
+
+
+
 
         System.out.println("Cliente conectado: " + clientKey);
 
@@ -28,7 +39,11 @@ public class UDPServer {
 
     private void handleDisconnection(InetAddress clientAddress, int clientPort) throws IOException {
         String clientKey = clientAddress.getHostAddress() + ":" + clientPort;
+        int index = ipAddress.indexOf(clientAddress);
         clients.remove(clientKey);
+        users.remove(index);
+        ipPort.remove(index);
+        ipAddress.remove(index);
 
         System.out.println("Cliente desconectado: " + clientKey);
 
@@ -53,21 +68,30 @@ public class UDPServer {
 
 
     public void processData(DatagramPacket packet) throws IOException {
-        String message = new String(packet.getData(), 0, packet.getLength());
-        System.out.println("Mensaje recibido: " + message);
+        String recibe = new String(packet.getData(), 0, packet.getLength());
+        System.out.println("Mensaje recibido: " + recibe);
         InetAddress clientAddress = packet.getAddress();
         int clientPort = packet.getPort();
+
+        String[] lstEntradaServidor = recibe.split(",");
+        String message = String.valueOf(lstEntradaServidor[0]);
+
+        String username = String.valueOf(lstEntradaServidor[1]);
+        System.out.println("username de ");
+        System.out.printf(username);
+        System.out.println(message);
 
         String clientKey = clientAddress.getHostAddress() + ":" + clientPort;
 
         if (message.startsWith("CONNECT")) {
-            handleConnection(clientAddress, clientPort);
+            handleConnection(clientAddress, clientPort, username);
         } else if (message.startsWith("DISCONNECT")) {
             handleDisconnection(clientAddress, clientPort);
         } else if(message.startsWith("PRIVADO")) {
             String recipientKey = message.split(" ")[1];
-            String mensaje = message.split(" ")[2];
-            sendPrivateMessage(mensaje ,recipientKey);
+            String mensaje = message.split(recipientKey)[1];
+            String send = username +": "+mensaje;
+            sendPrivateMessage(send ,recipientKey);
         }else {
             // Retransmitir el mensaje a todos los clientes, incluyendo la IP del remitente
             broadcast(clientKey + ": " + message);
@@ -84,10 +108,19 @@ public class UDPServer {
     }
 
 
-    public void sendPrivateMessage(String message, String recipientKey) throws IOException {
-        InetAddress recipientAddress = clients.get(recipientKey);
+    public void sendPrivateMessage(String message  , String  recipientKey) throws IOException {
+        System.out.println(recipientKey);
+        System.out.println(message);
+        int index = users.indexOf(recipientKey);
+        String privateIp = ipPort.get(index);
+        System.out.println("nombre");
+        System.out.println(recipientKey);
+        InetAddress recipientAddress = ipAddress.get(index);
+
+        System.out.println("ip");
+        System.out.println(recipientAddress);
         if (recipientAddress != null) {
-            int recipientPort = Integer.parseInt(recipientKey.split(":")[1]);
+            int recipientPort = Integer.parseInt(privateIp.split(":")[1]);
             sendData(message, recipientAddress, recipientPort);
         }
     }

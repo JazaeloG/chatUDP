@@ -5,14 +5,16 @@ import java.net.*;
 
 public class UDPClient {
     private DatagramSocket socket;
+    private String username;
     private InetAddress serverAddress;
     private int serverPort;
     private ChatClientUI ui;
 
-    public UDPClient(String serverIP, int serverPort) throws SocketException, UnknownHostException {
+    public UDPClient(String serverIP, int serverPort, String username) throws SocketException, UnknownHostException {
         socket = new DatagramSocket();
         this.serverAddress = InetAddress.getByName(serverIP);
         this.serverPort = serverPort;
+        this.username = username;
         this.ui = new ChatClientUI(this);
 
         // Enviar mensaje de conexión
@@ -22,7 +24,8 @@ public class UDPClient {
     public void sendMessage(String message) {
         try {
             System.out.println("Enviando mensaje: " + message);
-            byte[] buffer = message.getBytes();
+            String send = message +","+username;
+            byte[] buffer = send.getBytes();
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, serverAddress, serverPort);
             socket.send(packet);
         } catch (IOException e) {
@@ -52,7 +55,7 @@ public class UDPClient {
     }
 
     public static void main(String[] args) throws SocketException, UnknownHostException {
-        UDPClient client = new UDPClient("192.168.137.226", 12345);
+        UDPClient client = new UDPClient("192.168.137.226", 12345, "Jazael") ;
         client.receiveMessages();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
